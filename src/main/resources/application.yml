@@ -1,0 +1,7 @@
+kafka:
+  host: ${KAFKA_HOST:v.perm.ru:9093}
+  topic: ${KAFKA_TOPIC:er-log}
+  namegroup: logger
+elasticsearch:
+  host: ${ELASTICSEARCH_HOSTS:elasticsearch:9200}
+  event_doc_type: event
