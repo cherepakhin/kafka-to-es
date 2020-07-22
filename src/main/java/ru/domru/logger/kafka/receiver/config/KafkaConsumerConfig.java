@@ -41,9 +41,16 @@ public class KafkaConsumerConfig {
     @Value("${elasticsearch.host}")
     private String elasticsearchHost;
 
-    @Value("${elasticsearch.event_doc_type}")
-    private String elasticsearchDocType;
-
+    @Value("${elasticsearch.name_index}")
+    private String elasticsearchNameIndex;
+    @Value("${elasticsearch.count_docs}")
+    private int countDocs;
+    @Value("${elasticsearch.size_queue_mbs}")
+    private int sizeQueueMBs;
+    @Value("${elasticsearch.flush_intervat_seconds}")
+    private int flushIntervatSeconds;
+    @Value("${elasticsearch.count_concurent_requests}")
+    private int countConcurentRequests;
 
     @Bean
     public Map<String, Object> consumerConfigs() {
@@ -96,7 +103,12 @@ public class KafkaConsumerConfig {
 
     @Bean
     public ElasticSearchService elasticSearchService(@Autowired RestHighLevelClient client) {
-        return new ElasticSearchService(client);
+        return new ElasticSearchService(
+                client,
+                countDocs,
+                sizeQueueMBs,
+                flushIntervatSeconds,
+                countConcurentRequests);
     }
 
     @Bean
@@ -107,7 +119,7 @@ public class KafkaConsumerConfig {
         ContainerProperties containerProps = new ContainerProperties(topic);
         containerProps.setGroupId(nameGroup);
         ElasticSearchEventLogConsumer elasticSearchEventLogConsumer
-                = new ElasticSearchEventLogConsumer(elasticSearchService, elasticsearchDocType);
+                = new ElasticSearchEventLogConsumer(elasticSearchService, elasticsearchNameIndex);
         containerProps.setMessageListener(elasticSearchEventLogConsumer);
         KafkaMessageListenerContainer<String, Map> container =
                 new KafkaMessageListenerContainer<>(consumerFactory, containerProps);

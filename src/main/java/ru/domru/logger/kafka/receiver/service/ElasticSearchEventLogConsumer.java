@@ -13,21 +13,21 @@ public class ElasticSearchEventLogConsumer implements MessageListener<String, Ma
 
     ObjectMapper mapper = new ObjectMapper();
 
-    String docType;
+    String elasticsearchNameIndex;
     ElasticSearchService elasticSearchService;
 
-    public ElasticSearchEventLogConsumer(ElasticSearchService elasticSearchService, String docType) {
+    public ElasticSearchEventLogConsumer(ElasticSearchService elasticSearchService, String elasticsearchNameIndex) {
         this.elasticSearchService = elasticSearchService;
-        this.docType=docType;
+        this.elasticsearchNameIndex=elasticsearchNameIndex;
     }
 
     @Override
     public void onMessage(ConsumerRecord<String, Map> record) {
-        elasticSearchService.bulk(getIndexName(), docType, record.value());
+        elasticSearchService.bulk(getIndexName(), record.value());
     }
 
     String getIndexName() {
         LocalDate day = LocalDate.now();
-        return String.format("device-%s", day.format(formatter));
+        return String.format("%s-%s", elasticsearchNameIndex,day.format(formatter));
     }
 }
