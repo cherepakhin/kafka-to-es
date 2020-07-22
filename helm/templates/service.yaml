@@ -1,0 +1,76 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{ .Values.serviceName }}
+  namespace: {{ .Values.nameSpace }}
+  labels:
+    app: {{ .Values.serviceName }}
+    app.kubernetes.io/component: {{ .Values.serviceName }}
+    app.kubernetes.io/instance: {{ .Values.serviceName }}
+    app.kubernetes.io/part-of: {{ .Values.serviceNameApp }}
+    app.openshift.io/runtime-namespace: {{ .Values.nameSpace }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.serviceName }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.serviceName }}
+        deploymentconfig: {{ .Values.serviceName }}
+    spec:
+      imagePullSecrets:
+        - name: {{ .Values.imagePullSecrets }}
+      containers:
+        - resources:
+            limits:
+              memory: {{ .Values.resources.limits.memory }}
+
+          name: {{ .Values.serviceName }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          ports:
+            - containerPort: {{ .Values.servicePort }}
+              protocol: TCP
+          env:
+            - name: KAFKA_HOST
+              value: {{ .Values.kafka.host }}
+            - name: KAFKA_TOPIC
+              value: {{ .Values.kafka.topic }}
+            - name: KAFKA_NAME_GROUP
+              value: {{ .Values.kafka.nameGroup }}
+            - name: ELASTICSEARCH_HOSTS
+              value: {{ .Values.elasticsearch.host }}
+            - name: ELASTICSEARCH_NAME_INDEX
+              value: {{ .Values.elasticsearch.name_index }}
+            - name: COUNT_DOCS
+              value: {{ .Values.elasticsearch.count_docs }}
+            - name: SIZE_QUEUE_MBS
+              value: {{ .Values.elasticsearch.size_queue_mbs }}
+            - name: FLUSH_INTERVAT_SECONDS
+              value: {{ .Values.elasticsearch.flush_intervat_seconds }}
+            - name: COUNT_CONCURENT_REQUESTS
+              value: {{ .Values.elasticsearch.count_concurent_requests }}
+
+      restartPolicy: Always
+      securityContext: {}
+      schedulerName: default-scheduler
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.serviceNameSvc }}
+spec:
+  selector:
+    app: {{ .Values.serviceName }}
+  ports:
+    - protocol: "TCP"
+      port: {{ .Values.servicePort }}
+  type: LoadBalancer

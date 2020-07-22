@@ -1,0 +1,26 @@
+serviceName: kafka-to-es
+serviceNameSvc: kafka-to-es-svc
+serviceNameApp: kafka-to-es-app
+servicePort: 8080
+replicaCount: 1
+nameSpace: kafka-er
+imagePullSecrets: registry.rd.ertelecom.ru
+kafka:
+  host: kafka-svc.prod:9092
+  topic: er-log
+  nameGroup: logger
+elasticsearch:
+  host: 10.98.140.6:9200
+  name_index: device
+  count_docs: 10000
+  size_queue_mbs: 5
+  flush_intervat_seconds: 20
+  count_concurent_requests: 1
+image:
+  repository: registry.rd.ertelecom.ru/tvbe/kafka-to-es
+  tag: master
+
+resources:
+  limits:
+     memory: 512Mi
+
