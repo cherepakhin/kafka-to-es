@@ -1,0 +1,84 @@
+stages:
+  - build artifacts
+  - build containers
+  - deploy
+variables:
+  DOCKER_DRIVER: overlay2
+  GRADLE_USER_HOME: $CI_PROJECT_DIR/.gradle
+
+# ==========================================================================
+# Artifacts
+# ==========================================================================
+
+build kafka-to-es jar:
+  image: gradle
+  stage: build artifacts
+  variables:
+    GRADLE_BUILD_TASK_NAME: :build
+    GRADLE_SQ_TASK_NAME: :sonarqube
+    GRADLE_JAR_PATH: $CI_PROJECT_DIR/build/libs/kafka-to-es-*.jar
+  script:
+    # Use SonarQube only in develop branch
+    # because it rewrites all statistics in feature builds (free version of SQ)
+    - |
+      if [ "$CI_COMMIT_REF_NAME" == "develop" ]; then
+        GRADLE_TASK_NAME="${GRADLE_SQ_TASK_NAME} ${GRADLE_BUILD_TASK_NAME}";
+      else
+        GRADLE_TASK_NAME=${GRADLE_BUILD_TASK_NAME};
+      fi
+    - |
+      gradle --no-daemon \
+        -Dsonar.host.url=$SONARQUBE_URL \
+        -Dsonar.login=$SONARQUBE_LOGIN \
+        -Dsonar.password=$SONARQUBE_PASSWORD \
+        $GRADLE_TASK_NAME
+  artifacts:
+    expire_in: 1 days
+    paths:
+      - $GRADLE_JAR_PATH
+  cache:
+    key: $CI_PROJECT_NAME
+    paths:
+      - .gradle/caches/
+  tags:
+    - docker-java
+
+# ==========================================================================
+# Containers
+# ==========================================================================
+
+build kafka-to-es docker:
+  image: docker
+  services:
+    - docker:dind
+  stage: build containers
+  variables:
+    IMAGE_TAG: $CI_COMMIT_REF_SLUG
+    DOCKER_FILE: CI.Dockerfile
+    DOCKER_BUILD_CONTEXT: .
+  script:
+    - export GIT_BRANCH="${CI_COMMIT_REF_NAME}"
+    - export GIT_COMMIT="${CI_COMMIT_SHA:0:8}"
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker build --rm -t $CI_REGISTRY_IMAGE:$IMAGE_TAG -f $DOCKER_FILE --build-arg GIT_COMMIT --build-arg GIT_BRANCH $DOCKER_BUILD_CONTEXT
+    - docker push $CI_REGISTRY_IMAGE:$IMAGE_TAG
+  tags:
+    - docker
+  dependencies:
+    - build kafka-to-es jar
+#  only:
+#    - develop
+#    - /^v\d+\.\d+\.\d+$/
+#    - /^release\/\d+\.\d+\.\d+$/
+
+deploy:
+  image: registry.rd.ertelecom.ru/registry/helm_ci/helm:ci
+  stage: deploy
+  dependencies:
+    - build kafka-to-es docker
+  script:
+    - |
+      helm template ./helm \
+      --set image.repository="$CI_REGISTRY_IMAGE" \
+      --set image.tag="$CI_COMMIT_REF_SLUG" |\
+      kubectl apply	-f -

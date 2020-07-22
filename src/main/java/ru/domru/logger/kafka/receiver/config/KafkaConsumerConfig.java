@@ -31,16 +31,13 @@ import java.util.Map;
 public class KafkaConsumerConfig {
     @Value("${kafka.host}")
     private String kafkaHost;
-
     @Value("${kafka.namegroup}")
     private String nameGroup;
-
     @Value("${kafka.topic}")
     private String topic;
 
     @Value("${elasticsearch.host}")
     private String elasticsearchHost;
-
     @Value("${elasticsearch.name_index}")
     private String elasticsearchNameIndex;
     @Value("${elasticsearch.count_docs}")
