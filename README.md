@@ -1,7 +1,5 @@
 # Передатчик из kafka в elasticsearch
 
-ELASTICSEARCH_HOSTS:10.98.140.6:9200
-
 ####Переменные окружения для настройки
 
 |Назначение|Имя пременной|Значение по умолчанию|
@@ -18,3 +16,5 @@ ELASTICSEARCH_HOSTS:10.98.140.6:9200
 |Кол-во конкурентных запросов клиента ElastcSearch|COUNT_CONCURENT_REQUESTS|1|
 
 Док-ия для настройки работы буфера BulkProcessor ElastcSearch  [https://www.elastic.co/guide/en/elasticsearch/client/java-api/current/java-docs-bulk-processor.html](https://www.elastic.co/guide/en/elasticsearch/client/java-api/current/java-docs-bulk-processor.html)
+
+> K8s хост ELASTICSEARCH_HOSTS:10.98.140.6:9200
